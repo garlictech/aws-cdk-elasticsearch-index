@@ -3,6 +3,7 @@ const path = require('path');
 module.exports = {
   mode: 'development',
   target: 'node',
+  devtool: 'source-map',
   entry: {
     'on-event': './src/on-event/on-event.ts'
   },
@@ -12,7 +13,7 @@ module.exports = {
         test: /\.tsx?$/,
         use: [
           {
-            loader: 'ts-loader?configFile=tsconfig.src.json',
+            loader: 'ts-loader',
             options: {
               transpileOnly: true,
             },
