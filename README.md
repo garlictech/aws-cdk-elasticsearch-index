@@ -1,6 +1,6 @@
-![](https://img.shields.io/npm/v/@casechek/aws-cdk-elasticsearch-index)
+[![](https://img.shields.io/npm/v/@casechek/aws-cdk-elasticsearch-index)](https://www.npmjs.com/package/@casechek/aws-cdk-elasticsearch-index)
 [![codecov](https://codecov.io/gh/incompass/aws-cdk-elasticsearch-index/branch/master/graph/badge.svg)](https://codecov.io/gh/incompass/aws-cdk-elasticsearch-index)
-![](https://github.com/incompass/aws-cdk-elasticsearch-index/workflows/Continuous%20Integration/badge.svg)
+[![](https://github.com/incompass/aws-cdk-elasticsearch-index/workflows/Continuous%20Integration/badge.svg)](https://github.com/incompass/aws-cdk-elasticsearch-index/actions?query=workflow%3A%22Continuous+Integration%22)
 
 Elasticsearch Index CDK Construct
 =================================
