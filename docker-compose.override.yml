@@ -1,0 +1,27 @@
+version: '3.4'
+
+services:
+  watch:
+    image: node:12
+    volumes:
+      - ./:/var/task
+    working_dir: /var/task
+    command: npm run watch
+
+  on-event:
+    environment:
+      INSPECT_BRK: ${ELASTICSEARCH_INDEX_ON_EVENT_INSPECT_BRK:-}
+      HANDLER: /var/task/src/on-event/on-event
+      NODE_PATH: /var/runtime/node_modules:/opt/nodejs/node_modules:/opt/nodejs/node12/node_modules
+    volumes:
+      - ./entrypoint.sh:/usr/bin/entrypoint.sh:ro,delegated
+    entrypoint: /usr/bin/entrypoint.sh
+    ports:
+      - ${ELASTICSEARCH_INDEX_ON_EVENT_INSPECT_BRK:-9229}:9229
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.1.0
+    ports:
+      - ${CATALOG_INDEXER_KIBANA_PORT:-5601}:5601
+    depends_on:
+      - elasticsearch
