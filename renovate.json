@@ -2,5 +2,6 @@
   "extends": [
     "config:base"
   ],
-  "ignorePaths": ["**/docker-compose*.yml"]
+  "ignorePaths": ["**/docker-compose*.yml"],
+  "ignoreDeps": ["cucumber", "@types/cucumber"]
 }
