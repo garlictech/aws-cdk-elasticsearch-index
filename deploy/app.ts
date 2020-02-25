@@ -77,7 +77,7 @@ export class TestStack extends Stack {
     const es = new ElasticsearchIndex(this, 'ElasticsearchIndex', {
       mappingJSONPath: props.mappingJSONPath,
       elasticSearchIndex: props.indexName,
-      elasticSearchDomain: `https://${elasticsearchDomain.attrDomainEndpoint}`,
+      elasticSearchEndpoint: `https://${elasticsearchDomain.attrDomainEndpoint}`,
       vpc,
       policyArn: elasticsearchDomain.attrArn,
     });
@@ -87,11 +87,18 @@ export class TestStack extends Stack {
       exportName: `ESEndpoint-${this.stackName}`,
       value: `https://${elasticsearchDomain.attrDomainEndpoint}`,
     });
+
+    // tslint:disable-next-line:no-unused-expression
+    new CfnOutput(this, 'ESIndexName', {
+      exportName: `ESIndexName-${this.stackName}`,
+      value: es.indexName,
+    });
   }
 }
 
 const app = new App();
-const stack = new TestStack(app, app.node.tryGetContext('stackName'), {
+// tslint:disable-next-line:no-unused-expression
+new TestStack(app, app.node.tryGetContext('stackName'), {
   vpcId: app.node.tryGetContext('vpcId'),
   vpcAzs: app.node.tryGetContext('vpcAzs').split(','),
   privateSubnetIds: app.node.tryGetContext('privateSubnetIds').split(','),

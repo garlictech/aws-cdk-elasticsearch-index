@@ -7,16 +7,19 @@ import { Provider } from '@aws-cdk/custom-resources';
 import * as path from 'path';
 import { PolicyStatement } from '@aws-cdk/aws-iam';
 import { CustomResource } from '@aws-cdk/aws-cloudformation';
+import { INDEX_NAME_KEY } from '../src/on-event/constants';
 
 export interface ElasticsearchIndexProps {
   mappingJSONPath: string;
   elasticSearchIndex: string;
-  elasticSearchDomain: string;
+  elasticSearchEndpoint: string;
   vpc?: IVpc;
   policyArn?: string;
 }
 
 export class ElasticsearchIndex extends cdk.Construct {
+  readonly indexName: string;
+
   constructor(
     scope: cdk.Construct,
     id: string,
@@ -31,11 +34,11 @@ export class ElasticsearchIndex extends cdk.Construct {
     const onEventHandler = new Function(this, 'OnEventHandler', {
       runtime: Runtime.NODEJS_12_X,
       code: Code.fromAsset(
-        path.join(__dirname, '..', 'dist', 'src', 'on-event')
+        path.join(__dirname, '..', 'dist', 'resources', 'on-event')
       ),
       handler: 'on-event.handler',
       environment: {
-        ELASTICSEARCH_DOMAIN: props.elasticSearchDomain,
+        ELASTICSEARCH_ENDPOINT: props.elasticSearchEndpoint,
         ELASTICSEARCH_INDEX: props.elasticSearchIndex,
         S3_BUCKET_NAME: mappingJSONAsset.s3BucketName,
         S3_OBJECT_KEY: mappingJSONAsset.s3ObjectKey,
@@ -64,5 +67,7 @@ export class ElasticsearchIndex extends cdk.Construct {
     const resource = new CustomResource(this, 'ElasticsearchIndex', {
       provider,
     });
+
+    this.indexName = resource.getAttString(INDEX_NAME_KEY);
   }
 }
