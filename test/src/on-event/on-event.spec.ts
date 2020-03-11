@@ -7,6 +7,12 @@ import { INDEX_NAME_KEY } from '../../../src/on-event/constants';
 jest.mock('aws-sdk');
 jest.mock('@elastic/elasticsearch');
 
+const cryptoToStringFn = jest.fn();
+
+jest.mock('crypto', () => ({
+  randomBytes: () => ({ toString: cryptoToStringFn }),
+}));
+
 describe('OnEvent Handler', () => {
   let s3: S3;
   let es: Client;
@@ -50,8 +56,10 @@ describe('OnEvent Handler', () => {
       es,
       bucketName: 'bucket',
       objectKey: 'key',
-      indexName: 'index',
+      indexNamePrefix: 'index',
     });
+
+    cryptoToStringFn.mockReturnValue('random');
 
     // WHEN
     const result = await handler({
@@ -61,7 +69,7 @@ describe('OnEvent Handler', () => {
     // THEN
     expect(es.indices.create).toHaveBeenCalledWith(
       {
-        index: 'index',
+        index: 'index-random',
         body: {},
       },
       { requestTimeout: 120 * 1000, maxRetries: 0 }
@@ -87,7 +95,7 @@ describe('OnEvent Handler', () => {
       es,
       bucketName: 'bucket',
       objectKey: 'key',
-      indexName: 'index',
+      indexNamePrefix: 'index',
       maxHealthRetries: 2,
     });
 
@@ -125,7 +133,7 @@ describe('OnEvent Handler', () => {
       es,
       bucketName: 'bucket',
       objectKey: 'key',
-      indexName: 'index',
+      indexNamePrefix: 'index',
     });
 
     // WHEN
