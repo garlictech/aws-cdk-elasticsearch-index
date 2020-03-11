@@ -7,7 +7,7 @@ import axios from 'axios';
 import { Validator } from 'jsonschema';
 
 let response: InvocationResponse | AWSError;
-let functionName: string | undefined;
+let functionName: string;
 let port: string | undefined;
 const validator = new Validator();
 
@@ -30,7 +30,7 @@ When(
     });
     response = await client
       .invoke({
-        FunctionName: functionName ?? 'myfunction',
+        FunctionName: functionName,
         Payload: event,
       })
       .promise();
@@ -44,7 +44,7 @@ Then(/^the response will be equal to:$/, async (body: string) => {
 });
 
 Given(/^lambda function "([^"]*)"$/, functionNameEnv => {
-  functionName = process.env[functionNameEnv];
+  functionName = process.env[functionNameEnv] ?? 'myfunction';
 });
 
 Given(/^AWS port "([^"]*)"$/, portEnv => {
