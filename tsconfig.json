@@ -21,7 +21,8 @@
     "esModuleInterop": true,
     "outDir": "dist",
     "rootDir": ".",
-    "preserveWatchOutput": true
+    "preserveWatchOutput": true,
+    "newLine": "lf"
   },
   "exclude": ["cdk.out", "node_modules"]
 }
