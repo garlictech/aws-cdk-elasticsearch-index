@@ -1,4 +1,3 @@
-#!/usr/bin/env ts-node
 import { App, CfnOutput, Construct, Stack, StackProps } from '@aws-cdk/core';
 import { Peer, Port, SecurityGroup, Vpc } from '@aws-cdk/aws-ec2';
 import { ElasticsearchIndex } from '../dist/lib';
