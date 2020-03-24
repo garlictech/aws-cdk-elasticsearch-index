@@ -108,10 +108,17 @@ Then(/^there should be an index named "([^"]*)"$/, async indexName => {
 Then(
   /^the index "([^"]*)" should have mapping:$/,
   async (indexName, expected) => {
-    const mapping = await (await getESClient()).indices.getMapping({
-      index: indexName,
+    const client = await getESClient();
+    const mappings = await client.cat.indices({
+      h: ['index'],
     });
 
-    expect(mapping.body[indexName]).to.deep.equal(JSON.parse(expected));
+    const realIndexName = mappings.body.match(new RegExp(`${indexName}.*`))[0];
+
+    const mapping = await client.indices.getMapping({
+      index: realIndexName,
+    });
+
+    expect(mapping.body[realIndexName]).to.deep.equal(JSON.parse(expected));
   }
 );

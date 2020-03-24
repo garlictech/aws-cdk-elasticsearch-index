@@ -1,5 +1,4 @@
-import * as cdk from '@aws-cdk/core';
-import { Duration } from '@aws-cdk/core';
+import { Construct, Duration } from '@aws-cdk/core';
 import { Asset } from '@aws-cdk/aws-s3-assets';
 import { IVpc } from '@aws-cdk/aws-ec2';
 import { Code, Function, Runtime, Tracing } from '@aws-cdk/aws-lambda';
@@ -17,10 +16,10 @@ export interface ElasticsearchIndexProps {
   policyArn?: string;
 }
 
-export class ElasticsearchIndex extends cdk.Construct {
+export class ElasticsearchIndex extends Construct {
   readonly indexName: string;
   constructor(
-    scope: cdk.Construct,
+    scope: Construct,
     id: string,
     props: ElasticsearchIndexProps,
     onEventCodePath: string = path.join(
