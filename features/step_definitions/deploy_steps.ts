@@ -115,7 +115,7 @@ Then(
 
     const realIndexName = mappings.body.match(new RegExp(`${indexName}.*`))[0];
 
-    const mapping = await (await getESClient()).indices.getMapping({
+    const mapping = await client.indices.getMapping({
       index: realIndexName,
     });
 
