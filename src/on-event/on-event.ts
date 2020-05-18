@@ -33,17 +33,35 @@ const createIndexFromMapping = async (
   es: Client,
   indexNamePrefix: string,
   mapping: string
-): Promise<{ indexId: string; indexName: string }> => {
-  const indexId = randomBytes(16).toString('hex');
-  const indexName = `${indexNamePrefix}-${indexId}`;
+): Promise<string> => {
+  const indexName = `${indexNamePrefix}-${randomBytes(16).toString('hex')}`;
   await es.indices.create(
-    {
-      index: indexName,
-      body: mapping,
-    },
+    { index: indexName, body: mapping },
     { requestTimeout: 120 * 1000, maxRetries: 0 }
   );
-  return { indexId, indexName };
+  return indexName;
+};
+
+const reIndexAllDocuments = async (
+  es: Client,
+  oldIndex: string,
+  newIndex: string
+) => {
+  const response = await es.reindex({
+    wait_for_completion: true,
+    refresh: true,
+    body: {
+      source: {
+        index: oldIndex,
+      },
+      dest: {
+        index: newIndex,
+      },
+    },
+  });
+  if (response.body.timed_out) {
+    throw new TimeoutError();
+  }
 };
 
 export const createHandler = (
@@ -56,38 +74,62 @@ export const createHandler = (
 ): OnEventHandler => {
   return async (event: OnEventRequest): Promise<OnEventResponse> => {
     const log = logger.log;
-    if (['Create', 'Update'].includes(event.RequestType)) {
+    log('Received event:', event);
+
+    if (event.RequestType === 'Create') {
       const mapping = await getMappingFromBucket(s3, bucketParams);
       log('Downloaded mapping from S3:', mapping);
       await checkClusterHealth(es, maxHealthRetries);
       log('Attempting to create index..');
-      const { indexId, indexName } = await createIndexFromMapping(
+      const indexName = await createIndexFromMapping(
         es,
         indexNamePrefix,
         mapping
       );
       log(`Created index ${indexName}`);
-      // PhysicalResourceId will change with each update, which will trigger
-      // a DELETE event for the older resource.
+
       return {
-        PhysicalResourceId: indexId,
-        Data: {
-          [INDEX_NAME_KEY]: indexName,
-        },
+        PhysicalResourceId: indexName,
+        Data: { [INDEX_NAME_KEY]: indexName },
+      };
+    } else if (event.RequestType === 'Update') {
+      if (event.PhysicalResourceId == null) {
+        throw new Error('event.PhysicalResourceId is required');
+      }
+      const mapping = await getMappingFromBucket(s3, bucketParams);
+      log('Downloaded mapping from S3:', mapping);
+      await checkClusterHealth(es, maxHealthRetries);
+      log('Attempting to create index..');
+      const oldIndexName = event.PhysicalResourceId as string;
+      const newIndexName = await createIndexFromMapping(
+        es,
+        indexNamePrefix,
+        mapping
+      );
+      log(`Created index ${newIndexName}, reindexing from ${oldIndexName}..`);
+      await reIndexAllDocuments(es, oldIndexName, newIndexName);
+      return {
+        PhysicalResourceId: newIndexName,
+        Data: { [INDEX_NAME_KEY]: newIndexName },
       };
     } else if (event.RequestType === 'Delete') {
-      const currentIndexName: string = event.ResourceProperties.IndexName;
+      if (event.PhysicalResourceId == null) {
+        throw new Error('event.PhysicalResourceId is required');
+      }
+      const currentIndexName: string = event.PhysicalResourceId;
       log(`Deleting older index: ${currentIndexName}`);
       const response = await es.indices.delete(
-        {
-          index: currentIndexName,
-        },
+        { index: currentIndexName },
         { requestTimeout: 120 * 1000, maxRetries: 0 }
       );
+
       if (response.statusCode !== 200) {
-        throw new Error();
+        throw new Error('Error when deleting the older index.');
       }
+
+      return { PhysicalResourceId: currentIndexName };
     }
-    return {};
+
+    throw new Error('Unknown Request Type');
   };
 };

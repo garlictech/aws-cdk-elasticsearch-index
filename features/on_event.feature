@@ -48,9 +48,9 @@ Feature: As a CloudFormation Stack
           "$id": "#/properties/PhysicalResourceId",
           "type": "string",
           "examples": [
-            "somerandomstring"
+            "somerandomestring-0123abc"
           ],
-          "pattern": "^[0-9a-fA-F]+$"
+          "pattern": "^.*-[a-f0-9]+$"
         },
         "Data": {
           "$id": "#/properties/Data",
@@ -87,6 +87,12 @@ Feature: As a CloudFormation Stack
       }
     }
     """
+    And an elasticsearch index named "first-index" has this document indexed:
+    """
+    {
+      "field1": "le-foo-value"
+    }
+    """
     And a index configuration file "ON_EVENT_S3_OBJECT_KEY" exists in bucket "ON_EVENT_S3_BUCKET_NAME" with contents:
     """
     {
@@ -101,7 +107,8 @@ Feature: As a CloudFormation Stack
     When I send an event with body:
     """
     {
-      "RequestType": "Update"
+      "RequestType": "Update",
+      "PhysicalResourceId": "first-index"
     }
     """
     Then an elasticsearch index prefixed with "ON_EVENT_INDEX" exists
@@ -112,6 +119,12 @@ Feature: As a CloudFormation Stack
         "field1" : { "type" : "text" },
         "field2" : { "type" : "text" }
       }
+    }
+    """
+    And the elasticsearch index has this document indexed:
+    """
+    {
+      "field1": "le-foo-value"
     }
     """
     And the response will match schema:
@@ -131,9 +144,9 @@ Feature: As a CloudFormation Stack
           "$id": "#/properties/PhysicalResourceId",
           "type": "string",
           "examples": [
-            "somerandomstring"
+            "somerandomestring-0123abc"
           ],
-          "pattern": "^[0-9a-fA-F]+$"
+          "pattern": "^.*-[a-f0-9]+$"
         },
         "Data": {
           "$id": "#/properties/Data",
@@ -174,9 +187,7 @@ Feature: As a CloudFormation Stack
     """
     {
       "RequestType": "Delete",
-      "ResourceProperties": {
-        "IndexName": "test-index"
-      }
+      "PhysicalResourceId": "test-index"
     }
     """
     Then an elasticsearch index prefixed with "ON_EVENT_INDEX" does not exist
