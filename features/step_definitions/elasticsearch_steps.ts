@@ -77,7 +77,17 @@ Then(
   }
 );
 
+Then(
+  /^an elasticsearch index named "([^"]*)" does not exist$/,
+  async (indexName: string) => {
+    const indices = await getESClient().cat.indices();
+    // tslint:disable-next-line:no-unused-expression
+    expect(indices.body).to.not.contain(indexName);
+  }
+);
+
 Then(/^the elasticsearch index has mapping:$/, async (expected: string) => {
+  console.dir({ indexName });
   const mapping = await getESClient().indices.getMapping({
     index: indexName as string,
   });
@@ -88,6 +98,7 @@ Then(/^the elasticsearch index has mapping:$/, async (expected: string) => {
 Then(
   /^the elasticsearch index has this document indexed:$/,
   async (expected: string) => {
+    console.dir({ indexHasDocument: indexName });
     const result = await getESClient().search({
       index: indexName as string,
       body: { query: { match: JSON.parse(expected) } },

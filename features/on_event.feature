@@ -48,9 +48,9 @@ Feature: As a CloudFormation Stack
           "$id": "#/properties/PhysicalResourceId",
           "type": "string",
           "examples": [
-            "somerandomestring-0123abc"
+            "0123abc"
           ],
-          "pattern": "^.*-[a-f0-9]+$"
+          "pattern": "^[a-f0-9]+$"
         },
         "Data": {
           "$id": "#/properties/Data",
@@ -77,7 +77,8 @@ Feature: As a CloudFormation Stack
   Scenario: OnEvent update index
     Given lambda function "ON_EVENT_FUNCTION_NAME"
     And AWS port "ON_EVENT_PORT"
-    And an elasticsearch index named "first-index" exists with mapping:
+    # HACK TODO FIXME this depends on the env var prefix to be "test-index"
+    And an elasticsearch index named "test-index-abc" exists with mapping:
     """
     {
       "mappings": {
@@ -87,7 +88,8 @@ Feature: As a CloudFormation Stack
       }
     }
     """
-    And an elasticsearch index named "first-index" has this document indexed:
+    # HACK TODO FIXME this depends on the env var prefix to be "test-index"
+    And an elasticsearch index named "test-index-abc" has this document indexed:
     """
     {
       "field1": "le-foo-value"
@@ -108,7 +110,7 @@ Feature: As a CloudFormation Stack
     """
     {
       "RequestType": "Update",
-      "PhysicalResourceId": "first-index"
+      "PhysicalResourceId": "abc"
     }
     """
     Then an elasticsearch index prefixed with "ON_EVENT_INDEX" exists
@@ -144,9 +146,9 @@ Feature: As a CloudFormation Stack
           "$id": "#/properties/PhysicalResourceId",
           "type": "string",
           "examples": [
-            "somerandomestring-0123abc"
+            "0123abc"
           ],
-          "pattern": "^.*-[a-f0-9]+$"
+          "pattern": "^[a-f0-9]+$"
         },
         "Data": {
           "$id": "#/properties/Data",
@@ -173,7 +175,8 @@ Feature: As a CloudFormation Stack
   Scenario: OnEvent delete index
     Given lambda function "ON_EVENT_FUNCTION_NAME"
     And AWS port "ON_EVENT_PORT"
-    And an elasticsearch index named "test-index" exists with mapping:
+    # HACK TODO FIXME this depends on the env var prefix to be "test-index"
+    And an elasticsearch index named "test-index-abc" exists with mapping:
     """
     {
       "mappings": {
@@ -187,7 +190,7 @@ Feature: As a CloudFormation Stack
     """
     {
       "RequestType": "Delete",
-      "PhysicalResourceId": "test-index"
+      "PhysicalResourceId": "abc"
     }
     """
-    Then an elasticsearch index prefixed with "ON_EVENT_INDEX" does not exist
+    Then an elasticsearch index named "test-index-abc" does not exist
