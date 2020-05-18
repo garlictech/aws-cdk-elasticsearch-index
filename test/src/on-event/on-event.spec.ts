@@ -4,6 +4,7 @@ import {
 } from '@aws-cdk/custom-resources/lib/provider-framework/types';
 import { S3 } from 'aws-sdk';
 import { Client } from '@elastic/elasticsearch';
+import { randomBytes } from 'crypto';
 import { INDEX_NAME_KEY } from '../../../src/on-event/constants';
 
 const cryptoToStringFn = jest.fn();
@@ -120,16 +121,20 @@ describe('OnEvent Handler', () => {
       body: { timed_out: false },
     });
     mockEsCreate.mockResolvedValueOnce(true);
-    cryptoToStringFn.mockReturnValue('random');
 
-    const oldIndex = 'old-index';
-    const newIndex = 'index-random';
+    const indexPrefix = 'index';
+    const oldId = randomBytes(16).toString('hex');
+    const newId = randomBytes(16).toString('hex');
+
+    cryptoToStringFn.mockReturnValue(newId);
+    const oldIndex = `${indexPrefix}-${oldId}`;
+    const newIndex = `${indexPrefix}-${newId}`;
 
     // WHEN
-    const result = await handler({
+    const result = await handler(({
       RequestType: 'Update',
-      PhysicalResourceId: oldIndex,
-    } as OnEventRequest);
+      PhysicalResourceId: oldId,
+    } as unknown) as OnEventRequest);
 
     // THEN
     expect(mockEsCreate).toHaveBeenCalledWith(
@@ -144,7 +149,7 @@ describe('OnEvent Handler', () => {
       refresh: true,
       body: {
         source: {
-          index: 'old-index',
+          index: oldIndex,
         },
         dest: {
           index: newIndex,
@@ -162,12 +167,13 @@ describe('OnEvent Handler', () => {
       body: { timed_out: true },
     });
     mockEsCreate.mockResolvedValueOnce(true);
-    cryptoToStringFn.mockReturnValue('random');
 
+    const oldId = randomBytes(16).toString('hex');
+    cryptoToStringFn.mockReturnValue(oldId);
     await expect(
       handler({
         RequestType: 'Update',
-        PhysicalResourceId: 'old-index',
+        PhysicalResourceId: oldId,
       } as OnEventRequest)
     ).rejects.toThrow(TimeoutError);
   });
@@ -184,15 +190,19 @@ describe('OnEvent Handler', () => {
   it('deletes index on delete event', async () => {
     mockEsDelete.mockResolvedValueOnce({ statusCode: 200 });
 
+    const indexPrefix = 'index';
+    const oldId = randomBytes(16).toString('hex');
+    const oldIndex = `${indexPrefix}-${oldId}`;
+
     // WHEN
     const result = await handler(({
       RequestType: 'Delete',
-      PhysicalResourceId: 'existing-index',
+      PhysicalResourceId: oldId,
     } as unknown) as OnEventRequest);
 
     // THEN
     expect(mockEsDelete).toHaveBeenCalledWith(
-      { index: 'existing-index' },
+      { index: oldIndex },
       { requestTimeout: 120 * 1000, maxRetries: 0 }
     );
   });
@@ -200,17 +210,20 @@ describe('OnEvent Handler', () => {
   it('tries to delete an non-existent index', async () => {
     mockEsDelete.mockResolvedValueOnce({ statusCode: 404 });
 
+    const indexPrefix = 'index';
+    const oldId = randomBytes(16).toString('hex');
+    const oldIndex = `${indexPrefix}-${oldId}`;
     // WHEN
     await expect(
       handler(({
         RequestType: 'Delete',
-        PhysicalResourceId: 'existing-index',
+        PhysicalResourceId: oldId,
       } as unknown) as OnEventRequest)
     ).rejects.toThrowError('Error when deleting the older index.');
 
     // THEN
     expect(mockEsDelete).toHaveBeenCalledWith(
-      { index: 'existing-index' },
+      { index: oldIndex },
       { requestTimeout: 120 * 1000, maxRetries: 0 }
     );
   });
