@@ -1,3 +1,4 @@
+@on-event
 @on-event-create
 Feature: As a CloudFormation Stack
   I want to respond to create events
@@ -23,8 +24,8 @@ Feature: As a CloudFormation Stack
       "RequestType": "Create"
     }
     """
-    Then an elasticsearch index prefixed with "ON_EVENT_INDEX" exists
-    And the elasticsearch index has mapping:
+    Then an elasticsearch index with prefix "ON_EVENT_INDEX" exists
+    And the elasticsearch index with prefix "ON_EVENT_INDEX" has mapping:
     """
     {
       "properties" : {

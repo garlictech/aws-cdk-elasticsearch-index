@@ -1,3 +1,4 @@
+@on-event
 @on-event-update
 Feature: As a CloudFormation Stack
   I want to respond to update events
@@ -7,8 +8,7 @@ Feature: As a CloudFormation Stack
   Scenario: OnEvent update index
     Given lambda function "ON_EVENT_FUNCTION_NAME"
     And AWS port "ON_EVENT_PORT"
-    # HACK TODO FIXME this depends on the env var prefix to be "test-index"
-    And an elasticsearch index named "test-index-abc" exists with mapping:
+    And an elasticsearch index with prefix "ON_EVENT_INDEX" and id "abc" exists with mapping:
     """
     {
       "mappings": {
@@ -18,8 +18,7 @@ Feature: As a CloudFormation Stack
       }
     }
     """
-    # HACK TODO FIXME this depends on the env var prefix to be "test-index"
-    And an elasticsearch index named "test-index-abc" has this document indexed:
+    And an elasticsearch index with prefix "ON_EVENT_INDEX" and id "abc" has this document indexed:
     """
     {
       "field1": "le-foo-value"
@@ -43,8 +42,8 @@ Feature: As a CloudFormation Stack
       "PhysicalResourceId": "abc"
     }
     """
-    Then an elasticsearch index prefixed with "ON_EVENT_INDEX" exists
-    And the elasticsearch index has mapping:
+    Then an elasticsearch index with prefix "ON_EVENT_INDEX" with id not "abc" exists
+    And the elasticsearch index with prefix "ON_EVENT_INDEX" with id not "abc" has mapping:
     """
     {
       "properties" : {
@@ -53,7 +52,7 @@ Feature: As a CloudFormation Stack
       }
     }
     """
-    And the elasticsearch index has this document indexed:
+    And the elasticsearch index with prefix "ON_EVENT_INDEX" with id not "abc" has this document indexed:
     """
     {
       "field1": "le-foo-value"

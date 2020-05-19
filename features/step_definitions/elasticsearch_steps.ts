@@ -3,7 +3,6 @@ import { Client } from '@elastic/elasticsearch';
 import { expect } from 'chai';
 
 let esClient: Client;
-let indexName: string;
 
 function getESClient(): Client {
   if (esClient == null) {
@@ -38,8 +37,26 @@ Given(
 );
 
 Given(
-  /^an elasticsearch index named "([^"]*)" has this document indexed:$/,
-  async (existingIndexName: string, mapping: string) => {
+  /^an elasticsearch index with prefix "([^"]*)" and id "([^"]*)" has this document indexed:$/,
+  async (prefixNameEnv: string, id: string, mapping: string) => {
+    const existingIndexName = `${process.env[prefixNameEnv]}-${id}`;
+    await getESClient().index({
+      index: existingIndexName,
+      refresh: 'true',
+      body: mapping,
+    });
+  }
+);
+
+Given(
+  /^an elasticsearch index with prefix "([^"]*)" with id not "([^"]*)" has this document indexed:$/,
+  async (prefixNameEnv: string, notId: string, mapping: string) => {
+    const [existingIndexName] = (await getESClient().cat.indices()).body
+      .filter((indexName: string) =>
+        indexName.startsWith(process.env[prefixNameEnv] as string)
+      )
+      .filter((indexName: string) => !indexName.endsWith(notId));
+
     await getESClient().index({
       index: existingIndexName,
       refresh: 'true',
@@ -49,32 +66,53 @@ Given(
 );
 
 Then(
-  /^an elasticsearch index prefixed with "([^"]*)" exists$/,
-  async (indexNameEnv: string) => {
+  /^an elasticsearch index with prefix "([^"]*)" exists$/,
+  async (prefixNameEnv: string) => {
     const indices = await getESClient().cat.indices();
 
     // tslint:disable-next-line:no-unused-expression
-    expect(indices.body).to.contain(process.env[indexNameEnv]);
+    expect(indices.body).to.contain(process.env[prefixNameEnv]);
     expect(indices.statusCode).to.be.equal(200);
 
     // @todo this regex should stop at the first whitespace but does not in javascript
     const matches = (indices.body as string).match(
-      new RegExp(`${process.env[indexNameEnv]}[^ ]*`, 'gm')
+      new RegExp(`${process.env[prefixNameEnv]}[^ ]*`, 'gm')
     );
-    if (matches && matches.length === 1) {
-      indexName = matches[0];
-    }
+
+    const [indexName] = matches ?? [];
     // tslint:disable-next-line:no-unused-expression
     expect(indexName).to.not.be.empty;
   }
 );
 
 Then(
-  /^an elasticsearch index prefixed with "([^"]*)" does not exist$/,
-  async (indexNameEnv: string) => {
+  /^an elasticsearch index with prefix "([^"]*)" with id not "([^"]*)" exists$/,
+  async (prefixNameEnv: string, notId: string) => {
+    const indices = await getESClient().cat.indices();
+
+    // tslint:disable-next-line:no-unused-expression
+    expect(indices.body).to.contain(process.env[prefixNameEnv]);
+    expect(indices.statusCode).to.be.equal(200);
+
+    // @todo this regex should stop at the first whitespace but does not in javascript
+    const matches = (indices.body as string).match(
+      new RegExp(`${process.env[prefixNameEnv]}[^ ]*`, 'gm')
+    );
+
+    const [indexName] = (matches ?? []).filter(
+      (indexName: string) => !indexName.endsWith(notId)
+    );
+    // tslint:disable-next-line:no-unused-expression
+    expect(indexName).to.not.be.empty;
+  }
+);
+
+Then(
+  /^an elasticsearch index with prefix "([^"]*)" does not exist$/,
+  async (prefixNameEnv: string) => {
     const indices = await getESClient().cat.indices();
     // tslint:disable-next-line:no-unused-expression
-    expect(indices.body).to.not.contain(process.env[indexNameEnv]);
+    expect(indices.body).to.not.contain(process.env[prefixNameEnv]);
   }
 );
 
@@ -88,19 +126,78 @@ Then(
   }
 );
 
-Then(/^the elasticsearch index has mapping:$/, async (expected: string) => {
-  console.dir({ indexName });
-  const mapping = await getESClient().indices.getMapping({
-    index: indexName as string,
-  });
+Then(
+  /^the elasticsearch index with prefix "([^"]*)" has mapping:$/,
+  async (prefixNameEnv: string, expected: string) => {
+    const indices = await getESClient().cat.indices();
 
-  expect(mapping.body[indexName].mappings).to.deep.equal(JSON.parse(expected));
-});
+    // tslint:disable-next-line:no-unused-expression
+    expect(indices.body).to.contain(process.env[prefixNameEnv]);
+    expect(indices.statusCode).to.be.equal(200);
+
+    // @todo this regex should stop at the first whitespace but does not in javascript
+    const matches = (indices.body as string).match(
+      new RegExp(`${process.env[prefixNameEnv]}[^ ]*`, 'gm')
+    );
+
+    const [indexName] = matches ?? [];
+
+    const mapping = await getESClient().indices.getMapping({
+      index: indexName as string,
+    });
+
+    expect(mapping.body[indexName].mappings).to.deep.equal(
+      JSON.parse(expected)
+    );
+  }
+);
 
 Then(
-  /^the elasticsearch index has this document indexed:$/,
-  async (expected: string) => {
-    console.dir({ indexHasDocument: indexName });
+  /^the elasticsearch index with prefix "([^"]*)" with id not "([^"]*)" has mapping:$/,
+  async (prefixNameEnv: string, notId: string, expected: string) => {
+    const indices = await getESClient().cat.indices();
+
+    // tslint:disable-next-line:no-unused-expression
+    expect(indices.body).to.contain(process.env[prefixNameEnv]);
+    expect(indices.statusCode).to.be.equal(200);
+
+    // @todo this regex should stop at the first whitespace but does not in javascript
+    const matches = (indices.body as string).match(
+      new RegExp(`${process.env[prefixNameEnv]}[^ ]*`, 'gm')
+    );
+
+    const [indexName] = (matches ?? []).filter(
+      (indexName: string) => !indexName.endsWith(notId)
+    );
+
+    const mapping = await getESClient().indices.getMapping({
+      index: indexName as string,
+    });
+
+    expect(mapping.body[indexName].mappings).to.deep.equal(
+      JSON.parse(expected)
+    );
+  }
+);
+
+Then(
+  /^the elasticsearch index with prefix "([^"]*)" with id not "([^"]*)" has this document indexed:$/,
+  async (prefixNameEnv: string, notId: string, expected: string) => {
+    const indices = await getESClient().cat.indices();
+
+    // tslint:disable-next-line:no-unused-expression
+    expect(indices.body).to.contain(process.env[prefixNameEnv]);
+    expect(indices.statusCode).to.be.equal(200);
+
+    // @todo this regex should stop at the first whitespace but does not in javascript
+    const matches = (indices.body as string).match(
+      new RegExp(`${process.env[prefixNameEnv]}[^ ]*`, 'gm')
+    );
+
+    const [indexName] = (matches ?? []).filter(
+      (indexName: string) => !indexName.endsWith(notId)
+    );
+
     const result = await getESClient().search({
       index: indexName as string,
       body: { query: { match: JSON.parse(expected) } },

@@ -1,3 +1,4 @@
+@on-event
 @on-event-delete
 Feature: As a CloudFormation Stack
   I want to respond to delete events
