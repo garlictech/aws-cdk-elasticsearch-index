@@ -165,7 +165,7 @@ ON_EVENT_S3_OBJECT_KEY=test-object-key \
 ON_EVENT_INDEX=test-index \
 ELASTICSEARCH_ENDPOINT=http://localhost:9200 \
 ELASTICSEARCH_INDEX=test-index \
-npm run cucumber -- --tags "not @stack"
+npm run cucumber -- --tags=@on-event
 ```
 
 ##### Powershell:
@@ -180,7 +180,7 @@ $env:ON_EVENT_S3_OBJECT_KEY='test-object-key';
 $env:ON_EVENT_INDEX='test-index';
 $env:ELASTICSEARCH_ENDPOINT='http://localhost:9200';
 $env:ELASTICSEARCH_INDEX='test-index';
-npm run cucumber -- --tags "not @stack"
+npm run cucumber -- --tags=@on-event
 ```
 
 ### Commit Messages
