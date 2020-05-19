@@ -7,8 +7,7 @@ Feature: As a CloudFormation Stack
   Scenario: OnEvent delete index
     Given lambda function "ON_EVENT_FUNCTION_NAME"
     And AWS port "ON_EVENT_PORT"
-    # HACK TODO FIXME this depends on the env var prefix to be "test-index"
-    And an elasticsearch index named "test-index-abc" exists with mapping:
+    And an elasticsearch index with prefix "ON_EVENT_INDEX" and id "abc" exists with mapping:
     """
     {
       "mappings": {
@@ -25,4 +24,4 @@ Feature: As a CloudFormation Stack
       "PhysicalResourceId": "abc"
     }
     """
-    Then an elasticsearch index named "test-index-abc" does not exist
+    Then an elasticsearch index with prefix "ON_EVENT_INDEX" and id "abc" does not exist

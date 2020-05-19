@@ -27,8 +27,9 @@ Before({ tags: '@clearElasticSearch' }, async () => {
 });
 
 Given(
-  /^an elasticsearch index named "([^"]*)" exists with mapping:$/,
-  async (existingIndexName: string, mapping: string) => {
+  /^an elasticsearch index with prefix "([^"]*)" and id "([^"]*)" exists with mapping:$/,
+  async (prefixNameEnv: string, id: string, mapping: string) => {
+    const existingIndexName = `${process.env[prefixNameEnv]}-${id}`;
     await getESClient().indices.create({
       index: existingIndexName,
       body: mapping,
@@ -78,8 +79,9 @@ Then(
 );
 
 Then(
-  /^an elasticsearch index named "([^"]*)" does not exist$/,
-  async (indexName: string) => {
+  /^an elasticsearch index with prefix "([^"]*)" and id "([^"]*)" does not exist$/,
+  async (prefixNameEnv: string, id: string) => {
+    const indexName = `${process.env[prefixNameEnv]}-${id}`;
     const indices = await getESClient().cat.indices();
     // tslint:disable-next-line:no-unused-expression
     expect(indices.body).to.not.contain(indexName);
